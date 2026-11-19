@@ -1,14 +1,11 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, Loader2, BarChart3, Calendar, Users, Shield, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { Check, BarChart3, Calendar, Users, Shield, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { WebsiteHeader } from "@/components/layout/WebsiteHeader";
 import { WebsiteFooter } from "@/components/layout/WebsiteFooter";
-import { useAuth } from "@/hooks/use-auth";
 import { markPendingPlanSelection } from "@/lib/pending-plan-selection";
-import { API_BASE, APP_BASE } from "@/config";
+import { APP_BASE } from "@/config";
 
 interface PricingPlan {
   id: string;
@@ -38,20 +35,14 @@ const trustBadges = [
 ];
 
 // Standalone deployment of the main app's "Grab it now" lifetime-deal
-// landing page. The coupon is applied automatically (never typed in).
-// Guests go to the main app's /register (full redirect, cross-origin);
-// an already-authenticated visitor (relies on COOKIE_DOMAIN + CORS being
-// configured on the backend -- see this repo's README) checks out right
-// here, which calls the main app's API cross-origin.
+// landing page. "Get Lifetime Access" always sends the visitor through the
+// main app's register -> email verification -> onboarding flow and only
+// then to payment -- deliberately NOT branching on any existing session,
+// since a session cookie shared from saasgama.com (COOKIE_DOMAIN=.saasgama.com)
+// would otherwise let this page skip straight to checkout for someone who
+// never actually signed in here, which is confusing on a marketing page
+// whose whole job is funneling new signups through onboarding.
 export default function LifetimeDealPage() {
-  const { isAuthenticated } = useAuth();
-  const billingCycle: "yearly" = "yearly";
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_type: string; discount_value: string; description?: string } | null>(null);
-  const [couponError, setCouponError] = useState("");
-  const [checkoutError, setCheckoutError] = useState("");
-
   const navigate = (path: string) => {
     window.location.href = path.startsWith("/") ? `${APP_BASE}${path}` : path;
   };
@@ -61,81 +52,7 @@ export default function LifetimeDealPage() {
   });
   const singlePlan = pricingPlans.find((p) => p.id === "single") || null;
 
-  const validateCouponMutation = useMutation({
-    mutationFn: async (code: string) => {
-      const res = await fetch(`${API_BASE}/api/coupons/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ code, plan: "single", billingCycle: "yearly" }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Invalid coupon");
-      return data;
-    },
-    onSuccess: (data) => {
-      setAppliedCoupon(data);
-      setCouponError("");
-    },
-    onError: (err: Error) => {
-      setCouponError(err.message);
-      setAppliedCoupon(null);
-    },
-  });
-
-  // Auto-apply the lifetime code the moment the checkout dialog is open --
-  // the whole point of this page is that the visitor never types a code.
-  useEffect(() => {
-    if (showCheckout && !appliedCoupon && !validateCouponMutation.isPending) {
-      validateCouponMutation.mutate(LIFETIME_CODE);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCheckout]);
-
-  const closeCheckout = () => {
-    setShowCheckout(false);
-    setSelectedPlan(null);
-    setAppliedCoupon(null);
-    setCouponError("");
-    setCheckoutError("");
-  };
-
-  const checkoutMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedPlan) throw new Error("No plan selected");
-      const res = await fetch(`${API_BASE}/api/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          plan: selectedPlan.id,
-          billingCycle,
-          couponCode: appliedCoupon?.code || LIFETIME_CODE,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start checkout");
-      return data;
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setCheckoutError("Checkout failed. Please try again.");
-      }
-    },
-    onError: (err: Error) => {
-      setCheckoutError(err.message);
-    },
-  });
-
   const handleGetStarted = () => {
-    if (!singlePlan) return;
-    if (isAuthenticated) {
-      setSelectedPlan(singlePlan);
-      setShowCheckout(true);
-      return;
-    }
     // sessionStorage here is same-origin only, so it can't carry across to
     // the main app -- the coupon/plan actually travel via the URL params
     // on the /register redirect below, which the main app reads itself.
@@ -144,13 +61,7 @@ export default function LifetimeDealPage() {
   };
 
   const yearlyAmount = singlePlan?.prices.year ? singlePlan.prices.year.amount / 100 : null;
-  const discountedAmount = appliedCoupon
-    ? appliedCoupon.discount_type === "lifetime"
-      ? parseFloat(appliedCoupon.discount_value)
-      : appliedCoupon.discount_type === "percentage"
-        ? Math.max(0, (yearlyAmount || 0) - ((yearlyAmount || 0) * parseFloat(appliedCoupon.discount_value)) / 100)
-        : Math.max(0, (yearlyAmount || 0) - parseFloat(appliedCoupon.discount_value))
-    : 79;
+  const discountedAmount = 79;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -276,61 +187,6 @@ export default function LifetimeDealPage() {
       </section>
 
       <WebsiteFooter />
-
-      <Dialog open={showCheckout} onOpenChange={(open) => { if (!open) closeCheckout(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Complete Your Lifetime Purchase</DialogTitle>
-            <DialogDescription>Single plan, one-time payment</DialogDescription>
-          </DialogHeader>
-
-          {selectedPlan && (
-            <div className="space-y-5">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
-                {yearlyAmount !== null && (
-                  <div className="text-sm text-gray-400 line-through">${yearlyAmount.toFixed(2)}</div>
-                )}
-                <div className="text-3xl font-bold text-gray-900">
-                  ${discountedAmount.toFixed(2)} <span className="text-base font-normal text-gray-600">once</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                    <span className="text-sm font-semibold text-green-700">{appliedCoupon.code} applied</span>
-                  </div>
-                ) : validateCouponMutation.isPending ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Applying {LIFETIME_CODE}...
-                  </div>
-                ) : couponError ? (
-                  <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                    <span className="text-xs text-red-600">{couponError}</span>
-                    <Button variant="outline" size="sm" onClick={() => validateCouponMutation.mutate(LIFETIME_CODE)}>
-                      Retry
-                    </Button>
-                  </div>
-                ) : null}
-                {checkoutError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                    <span className="text-xs text-red-600">{checkoutError}</span>
-                  </div>
-                )}
-              </div>
-
-              <Button
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={checkoutMutation.isPending}
-                onClick={() => checkoutMutation.mutate()}
-              >
-                {checkoutMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                Complete Payment
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
