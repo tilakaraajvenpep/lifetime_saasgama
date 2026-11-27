@@ -19,7 +19,6 @@ interface PricingPlan {
   };
 }
 
-const LIFETIME_CODE = "LIFETIMESG";
 
 const aboutHighlights = [
   { icon: BarChart3, title: "Spend Visibility", description: "See every SaaS subscription and what it actually costs you, in one place.", gradient: "from-blue-500 to-cyan-400" },
@@ -54,8 +53,8 @@ export default function LifetimeDealPage() {
   const teamPlan = pricingPlans.find((p) => p.id === "team") || null;
 
   const handleTeamGetStarted = () => {
-    markPendingPlanSelection({ planId: "team", billingCycle: "yearly", source: "landing", couponCode: LIFETIME_CODE });
-    navigate(`/register?plan=team&billing=yearly&source=landing&coupon=${encodeURIComponent(LIFETIME_CODE)}`);
+    markPendingPlanSelection({ planId: "team", billingCycle: "yearly", source: "landing" });
+    navigate(`/register?plan=team&billing=yearly&source=landing`);
   };
 
   const teamOriginalAmount = 390;
@@ -65,8 +64,8 @@ export default function LifetimeDealPage() {
     // sessionStorage here is same-origin only, so it can't carry across to
     // the main app -- the coupon/plan actually travel via the URL params
     // on the /register redirect below, which the main app reads itself.
-    markPendingPlanSelection({ planId: "single", billingCycle: "yearly", source: "landing", couponCode: LIFETIME_CODE });
-    navigate(`/register?plan=single&billing=yearly&source=landing&coupon=${encodeURIComponent(LIFETIME_CODE)}`);
+    markPendingPlanSelection({ planId: "single", billingCycle: "yearly", source: "landing" });
+    navigate(`/register?plan=single&billing=yearly&source=landing`);
   };
 
   const yearlyAmount = singlePlan?.prices.year ? singlePlan.prices.year.amount / 100 : null;
@@ -83,25 +82,25 @@ export default function LifetimeDealPage() {
       <WebsiteHeader />
 
       {/* Content on the left, plan card on the right */}
-      <section className="relative overflow-hidden pt-28 pb-24 bg-[#faf8f5]">
+      <section className="relative overflow-hidden pt-24 pb-16 md:pt-28 md:pb-24 bg-[#faf8f5]">
 
-        <div className="relative container mx-auto px-6">
-          <div className="grid lg:grid-cols-[1fr_auto] gap-12 items-center">
+        <div className="relative container mx-auto px-4 sm:px-6">
+          <div className="grid xl:grid-cols-[1fr_auto] gap-12 items-center">
             {/* About SaaSGama - left */}
             <div className="text-[#1f1f1f]">
               <div className="mb-6">
                 <span className="text-sm font-semibold uppercase tracking-wide text-[#e31b23]">Limited-time lifetime offer</span>
               </div>
 
-              <h1 className="font-serif text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05] text-[#1f1f1f]">
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-6 leading-[1.05] text-[#1f1f1f]">
                 Own SaaSGama <span className="italic text-[#e31b23]">for life</span>
               </h1>
-              <p className="text-lg md:text-xl text-gray-600 leading-relaxed mb-12 max-w-xl">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed mb-10 md:mb-12 max-w-xl xl:max-w-xl">
                 Track every software subscription, manage licenses, and stay ahead of renewals -
                 all from one dashboard. This is a one-time offer to get the Single plan forever, for a single $75 payment.
               </p>
 
-              <div className="grid grid-cols-2 gap-x-8 gap-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8 md:gap-y-10">
                 {aboutHighlights.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -118,8 +117,8 @@ export default function LifetimeDealPage() {
             </div>
 
             {/* Plan card - right */}
-            <div className="flex flex-col md:flex-row gap-6 items-stretch lg:justify-self-end">
-            <div className="relative w-full max-w-sm">
+            <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch md:justify-center xl:justify-self-end">
+            <div className="relative w-full max-w-sm md:w-[340px] md:max-w-none">
                             <div className="relative h-full flex flex-col rounded-2xl bg-white overflow-hidden border border-[#e31b23]/70 shadow-[0_10px_40px_-10px_rgba(227,27,35,0.25)]">
                 <div
                   className="py-1.5 text-center"
@@ -171,11 +170,11 @@ export default function LifetimeDealPage() {
                   </Button>
                   <p className="text-xs text-center text-gray-500 mt-3">No credit card required to get started.</p>
 
-                  <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-100 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mt-4 pt-4 border-t border-gray-100">
                     {trustBadges.map((badge) => {
                       const Icon = badge.icon;
                       return (
-                        <div key={badge.label} className="flex items-center gap-1.5 text-gray-400">
+                        <div key={badge.label} className="flex items-center gap-1.5 text-gray-400 whitespace-nowrap">
                           <Icon className="w-3.5 h-3.5" />
                           <span className="text-[11px] font-medium">{badge.label}</span>
                         </div>
@@ -187,7 +186,7 @@ export default function LifetimeDealPage() {
             </div>
 
             {/* Team annual plan card */}
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full max-w-sm md:w-[340px] md:max-w-none">
                             <div className="relative h-full rounded-2xl bg-white overflow-hidden border border-[#e31b23]/70 shadow-[0_10px_40px_-10px_rgba(227,27,35,0.25)] flex flex-col">
                 <div
                   className="py-1.5 text-center"
@@ -240,11 +239,11 @@ export default function LifetimeDealPage() {
                   </Button>
                   <p className="text-xs text-center text-gray-500 mt-3">No credit card required to get started.</p>
 
-                  <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-100 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mt-4 pt-4 border-t border-gray-100">
                     {trustBadges.map((badge) => {
                       const Icon = badge.icon;
                       return (
-                        <div key={badge.label} className="flex items-center gap-1.5 text-gray-400">
+                        <div key={badge.label} className="flex items-center gap-1.5 text-gray-400 whitespace-nowrap">
                           <Icon className="w-3.5 h-3.5" />
                           <span className="text-[11px] font-medium">{badge.label}</span>
                         </div>
