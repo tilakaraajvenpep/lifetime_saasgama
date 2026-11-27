@@ -15,7 +15,7 @@ export function WebsiteFooter() {
             <h4 className="font-semibold mb-4 text-white">Product</h4>
             <ul className="space-y-2 text-gray-400">
               <li><a href={`${APP_BASE}/features`} className="hover:text-white transition-colors">Features</a></li>
-              <li><a href={`${APP_BASE}/pricing`} className="hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="https://app.saasgama.com/pricing" className="hover:text-white transition-colors">Pricing</a></li>
             </ul>
           </div>
 

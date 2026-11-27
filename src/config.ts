@@ -6,3 +6,5 @@
 // deployed on its own origin (e.g. lifetime.saasgama.com).
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 export const APP_BASE = import.meta.env.VITE_APP_BASE_URL || "";
+// Sign in / register / checkout live on the app subdomain.
+export const AUTH_BASE = import.meta.env.VITE_AUTH_BASE_URL || "https://app.saasgama.com";
